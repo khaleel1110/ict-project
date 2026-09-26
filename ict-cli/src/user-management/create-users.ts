@@ -21,10 +21,10 @@ interface UserData {
 export async function CreateUsers() {
     const users: UserData[] = [
         {
-            displayName: 'Rukayya Haruna',
-            email: 'rukayyajhn006@gmail.com',
-            password: '12345678',
-            localGovernment: 'Bichi',
+            displayName: 'Aliyu Muhammad',
+            email: 'aliyumuhammad20202@gmail.com',
+            password: 'Admin2026#',
+            localGovernment: 'Kano',
             location: 'Kano',
             phone: '++234 903 366 4969',
             phoneType: 'Mobile',
@@ -33,8 +33,8 @@ export async function CreateUsers() {
 
         {
             displayName: 'Administrador',
-            email: 'admin001@gmail.com',
-            password: 'Baba1234#',
+            email: 'admin001@ict.com',
+            password: 'Admin2026#',
             localGovernment: 'Kano',
             location: 'Kano',
             phone: '+2347031140046',
@@ -43,7 +43,7 @@ export async function CreateUsers() {
         },
         {
             displayName: 'Ibrahim Kabir',
-            email: 'khaleel@gmail.com',
+            email: 'khaleelmatic@gmail.com',
             password: '12345678',
             localGovernment: 'Kumbotso',
             location: 'Kano',
