@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "unique-phones",
+    "staging": "unique-phones"
+  },
+  "targets": {},
+  "etags": {}
+}
