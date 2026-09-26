@@ -1,0 +1,436 @@
+// admin-issues.component.scss
+
+
+// =========================================================
+// STAT ICON
+// =========================================================
+
+.issue-stat-icon {
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 1.1rem;
+
+}
+
+
+// =========================================================
+// TECHNICIAN AVATAR
+// =========================================================
+
+.technician-avatar {
+
+  width: 30px;
+  height: 30px;
+
+  min-width: 30px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(
+    var(--bs-primary-rgb),
+    0.1
+  );
+
+  color: var(--bs-primary);
+
+  font-size: 0.75rem;
+
+  font-weight: 600;
+
+  text-transform: uppercase;
+
+}
+
+
+.technician-avatar.large {
+
+  width: 44px;
+  height: 44px;
+
+  min-width: 44px;
+
+  font-size: 1rem;
+
+}
+
+
+// =========================================================
+// ASSIGNED TECHNICIAN
+// =========================================================
+
+.assigned-technician {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 12px 14px;
+
+  border-radius: 10px;
+
+  background: var(--bs-tertiary-bg);
+
+  border: 1px solid var(--bs-border-color);
+
+}
+
+
+// =========================================================
+// SECTION HEADING
+// =========================================================
+
+.section-heading {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+}
+
+
+.section-heading-icon {
+
+  width: 36px;
+  height: 36px;
+
+  min-width: 36px;
+
+  border-radius: 9px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background:
+    rgba(
+      var(--bs-primary-rgb),
+      0.1
+    );
+
+  color: var(--bs-primary);
+
+}
+
+
+// =========================================================
+// ISSUE DESCRIPTION
+// =========================================================
+
+.issue-description {
+
+  white-space: pre-wrap;
+
+  line-height: 1.7;
+
+  padding: 16px;
+
+  border-radius: 10px;
+
+  background: var(--bs-tertiary-bg);
+
+  color: var(--bs-body-color);
+
+}
+
+
+// =========================================================
+// TIMELINE
+// =========================================================
+
+.issue-timeline {
+
+  position: relative;
+
+}
+
+
+.timeline-item {
+
+  position: relative;
+
+  display: flex;
+
+  gap: 14px;
+
+  padding-bottom: 28px;
+
+}
+
+
+.timeline-item:not(.timeline-last)::before {
+
+  content: '';
+
+  position: absolute;
+
+  left: 16px;
+
+  top: 34px;
+
+  bottom: 0;
+
+  width: 1px;
+
+  background:
+    var(--bs-border-color);
+
+}
+
+
+.timeline-icon {
+
+  position: relative;
+
+  z-index: 2;
+
+  width: 34px;
+
+  height: 34px;
+
+  min-width: 34px;
+
+  border-radius: 50%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background:
+    var(--bs-primary-bg-subtle);
+
+  color:
+    var(--bs-primary);
+
+  border:
+    1px solid
+    rgba(
+      var(--bs-primary-rgb),
+      0.15
+    );
+
+}
+
+
+.timeline-content {
+
+  flex: 1;
+
+  min-width: 0;
+
+}
+
+
+.timeline-message {
+
+  padding: 12px 14px;
+
+  border-radius: 9px;
+
+  background: var(--bs-tertiary-bg);
+
+  white-space: pre-wrap;
+
+  line-height: 1.6;
+
+}
+
+
+// =========================================================
+// ADD REPORT
+// =========================================================
+
+.add-report-box {
+
+  border-top:
+    1px solid
+    var(--bs-border-color);
+
+}
+
+
+// =========================================================
+// TABLE
+// =========================================================
+
+.table {
+
+  > :not(caption) > * > * {
+
+    padding-top: 0.9rem;
+
+    padding-bottom: 0.9rem;
+
+  }
+
+}
+
+
+.table thead th {
+
+  font-size: 0.75rem;
+
+  font-weight: 600;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.02em;
+
+  color: var(--bs-secondary-color);
+
+  white-space: nowrap;
+
+}
+
+
+// =========================================================
+// MODAL
+// =========================================================
+
+.modal {
+
+  backdrop-filter: none;
+
+}
+
+
+.modal-content {
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+}
+
+
+.modal-header {
+
+  background:
+    var(--bs-body-bg);
+
+}
+
+
+.modal-footer {
+
+  background:
+    var(--bs-tertiary-bg);
+
+}
+
+
+// =========================================================
+// DARK MODE
+// =========================================================
+
+[data-bs-theme='dark'] {
+
+  .table-light {
+
+    --bs-table-bg:
+      var(--bs-tertiary-bg);
+
+    --bs-table-color:
+      var(--bs-body-color);
+
+  }
+
+
+  .assigned-technician {
+
+    background:
+      var(--bs-tertiary-bg);
+
+  }
+
+
+  .issue-description {
+
+    background:
+      var(--bs-tertiary-bg);
+
+  }
+
+
+  .timeline-message {
+
+    background:
+      var(--bs-tertiary-bg);
+
+  }
+
+}
+
+
+// =========================================================
+// MOBILE
+// =========================================================
+
+@media (max-width: 767.98px) {
+
+  .modal-dialog {
+
+    margin: 0;
+
+    max-width: none;
+
+    min-height: 100%;
+
+  }
+
+
+  .modal-content {
+
+    min-height: 100vh;
+
+    border-radius: 0;
+
+  }
+
+
+  .modal-body {
+
+    padding-left: 1rem !important;
+
+    padding-right: 1rem !important;
+
+  }
+
+
+  .modal-header {
+
+    padding-left: 1rem !important;
+
+    padding-right: 1rem !important;
+
+  }
+
+
+  .modal-footer {
+
+    padding-left: 1rem !important;
+
+    padding-right: 1rem !important;
+
+  }
+
+}

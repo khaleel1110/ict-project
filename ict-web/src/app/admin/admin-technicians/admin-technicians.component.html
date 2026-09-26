@@ -1,0 +1,96 @@
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="h4 mb-1">Assignees</h2>
+    <p class="text-muted mb-0">Technicians that issues can be assigned to from the issue view.</p>
+  </div>
+</div>
+
+<div class="alert alert-soft-danger" role="alert" *ngIf="errorMessage">
+  {{ errorMessage }}
+</div>
+
+<div class="row g-4">
+
+  <!-- Add technician -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header border-bottom py-3">
+        <h6 class="mb-0">Add technician</h6>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="form" (ngSubmit)="submit()">
+
+          <div class="mb-3">
+            <label for="techName" class="form-label">Full name</label>
+            <input type="text" class="form-control" id="techName" formControlName="name"
+                   [class.is-invalid]="form.get('name')?.invalid && form.get('name')?.touched">
+            <div class="invalid-feedback" *ngIf="form.get('name')?.invalid && form.get('name')?.touched">
+              Name is required.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="techEmail" class="form-label">Email</label>
+            <input type="email" class="form-control" id="techEmail" formControlName="email"
+                   [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched">
+            <div class="invalid-feedback" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+              A valid email is required.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="techPhone" class="form-label">Phone</label>
+            <input type="text" class="form-control" id="techPhone" formControlName="phone">
+          </div>
+
+          <div class="mb-3">
+            <label for="techDepartment" class="form-label">Department</label>
+            <input type="text" class="form-control" id="techDepartment" formControlName="department"
+                   placeholder="e.g. Networking">
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" [disabled]="isSaving">
+            {{ isSaving ? 'Adding...' : '+ Add technician' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Technician list -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header border-bottom py-3">
+        <h6 class="mb-0">Current technicians</h6>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Department</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody *ngIf="technicians$ | async as technicians">
+            <tr *ngFor="let tech of technicians">
+              <td class="fw-semibold">{{ tech.name }}</td>
+              <td>{{ tech.email }}</td>
+              <td>{{ tech.phone || 'N/A' }}</td>
+              <td>{{ tech.department || 'N/A' }}</td>
+              <td class="text-end">
+                <button type="button" class="btn btn-white btn-sm text-danger" (click)="remove(tech)">Remove</button>
+              </td>
+            </tr>
+            <tr *ngIf="technicians.length === 0">
+              <td colspan="5" class="text-center text-muted py-5">No technicians added yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>

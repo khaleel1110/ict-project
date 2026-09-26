@@ -1,5 +1,6 @@
-import {Component} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 import {
   FormBuilder,
@@ -8,20 +9,20 @@ import {
   Validators,
 } from '@angular/forms';
 
-import {RouterLink} from '@angular/router';
+import {RouterLink, RouterLinkActive} from '@angular/router';
 
-import {IssueService} from '../services/issue.service';
-import {Issue} from '../models/issue.model';
+import { IssueService } from '../services/issue.service';
+import { Issue } from '../models/issue.model';
 
 @Component({
   selector: 'app-report-issue',
-
   standalone: true,
 
   imports: [
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
+    RouterLinkActive,
   ],
 
   templateUrl:
@@ -29,13 +30,25 @@ import {Issue} from '../models/issue.model';
 })
 export class ReportIssueComponent {
 
+  // =========================================================
+  // FORM
+  // =========================================================
+
   issueForm: FormGroup;
+
+  // =========================================================
+  // STATE
+  // =========================================================
 
   isSubmitting = false;
 
   submittedIssue: Issue | null = null;
 
   submitError = '';
+
+  // =========================================================
+  // CONSTRUCTOR
+  // =========================================================
 
   constructor(
     private readonly fb: FormBuilder,
@@ -45,6 +58,10 @@ export class ReportIssueComponent {
     this.issueForm =
       this.fb.group({
 
+        // -----------------------------------------------------
+        // FIRST NAME
+        // -----------------------------------------------------
+
         firstName: [
           '',
           [
@@ -52,6 +69,10 @@ export class ReportIssueComponent {
             Validators.minLength(2),
           ],
         ],
+
+        // -----------------------------------------------------
+        // LAST NAME
+        // -----------------------------------------------------
 
         lastName: [
           '',
@@ -61,6 +82,10 @@ export class ReportIssueComponent {
           ],
         ],
 
+        // -----------------------------------------------------
+        // EMAIL
+        // -----------------------------------------------------
+
         email: [
           '',
           [
@@ -68,6 +93,10 @@ export class ReportIssueComponent {
             Validators.email,
           ],
         ],
+
+        // -----------------------------------------------------
+        // PHONE
+        // -----------------------------------------------------
 
         phone: [
           '',
@@ -78,17 +107,33 @@ export class ReportIssueComponent {
           ],
         ],
 
+        // -----------------------------------------------------
+        // DEPARTMENT
+        // -----------------------------------------------------
+
         department: [''],
+
+        // -----------------------------------------------------
+        // CATEGORY
+        // -----------------------------------------------------
 
         category: [
           '',
           Validators.required,
         ],
 
+        // -----------------------------------------------------
+        // PRIORITY
+        // -----------------------------------------------------
+
         priority: [
           'Medium',
           Validators.required,
         ],
+
+        // -----------------------------------------------------
+        // DESCRIPTION
+        // -----------------------------------------------------
 
         description: [
           '',
@@ -101,10 +146,14 @@ export class ReportIssueComponent {
   }
 
   // =========================================================
-  // SUBMIT
+  // SUBMIT ISSUE
   // =========================================================
 
   async handleSubmit(): Promise<void> {
+
+    // -------------------------------------------------------
+    // VALIDATE FORM
+    // -------------------------------------------------------
 
     if (this.issueForm.invalid) {
 
@@ -112,6 +161,10 @@ export class ReportIssueComponent {
 
       return;
     }
+
+    // -------------------------------------------------------
+    // START SUBMISSION
+    // -------------------------------------------------------
 
     this.isSubmitting = true;
 
@@ -122,42 +175,62 @@ export class ReportIssueComponent {
 
     try {
 
+      // -----------------------------------------------------
+      // CREATE ISSUE
+      // -----------------------------------------------------
+
       const issue =
         await this.issueService.create({
 
           fullName:
-            `${value.firstName} ${value.lastName}`.trim(),
+            `${value.firstName} ${value.lastName}`
+              .trim(),
 
           email:
-          value.email,
+            String(value.email)
+              .trim()
+              .toLowerCase(),
 
           phone:
-            value.phone ?? '',
+            value.phone?.trim() ?? '',
 
           department:
-            value.department ?? '',
+            value.department?.trim() ?? '',
 
           category:
-          value.category,
+            value.category,
 
           priority:
-          value.priority,
+            value.priority,
 
           description:
-          value.description,
-
-          // These are not supplied by the
-          // public form because the service
-          // automatically creates them.
+            value.description?.trim() ?? '',
         });
 
-      // Show ticket to the user
+      // -----------------------------------------------------
+      // SAVE CREATED ISSUE
+      // -----------------------------------------------------
+
       this.submittedIssue = issue;
 
-      // Reset form
+      // -----------------------------------------------------
+      // RESET FORM
+      // -----------------------------------------------------
+
       this.issueForm.reset({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        department: '',
+        category: '',
         priority: 'Medium',
+        description: '',
       });
+
+      // -----------------------------------------------------
+      // LOG SUCCESS
+      // -----------------------------------------------------
 
       console.log(
         'Report submitted successfully:',
@@ -165,6 +238,10 @@ export class ReportIssueComponent {
       );
 
     } catch (error) {
+
+      // -----------------------------------------------------
+      // HANDLE ERROR
+      // -----------------------------------------------------
 
       console.error(
         'Failed to submit issue:',
@@ -176,12 +253,16 @@ export class ReportIssueComponent {
 
     } finally {
 
+      // -----------------------------------------------------
+      // STOP LOADING
+      // -----------------------------------------------------
+
       this.isSubmitting = false;
     }
   }
 
   // =========================================================
-  // REPORT ANOTHER
+  // REPORT ANOTHER ISSUE
   // =========================================================
 
   reportAnother(): void {
@@ -191,7 +272,19 @@ export class ReportIssueComponent {
     this.submitError = '';
 
     this.issueForm.reset({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      department: '',
+      category: '',
       priority: 'Medium',
+      description: '',
     });
+
+    // Remove validation states
+    this.issueForm.markAsPristine();
+    this.issueForm.markAsUntouched();
   }
 }
+

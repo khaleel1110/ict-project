@@ -3,55 +3,141 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // =========================================================
+    // AUTH HELPERS
+    // =========================================================
+
     function isSignedIn() {
       return request.auth != null;
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.admin == true;
+      return isSignedIn()
+        && request.auth.token.admin == true;
     }
 
-    // Users can read/update their own profile document; only admins can
-    // read or write other users' documents (e.g. from the admin dashboard).
+
+    // =========================================================
+    // USERS
+    // =========================================================
+
     match /users/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow write: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+
+      // A user can read their own profile.
+      // Admins can read any user.
+      allow read: if isSignedIn()
+        && (
+          request.auth.uid == userId
+          || isAdmin()
+        );
+
+      // Users can update their own profile.
+      // Admins can create/update/delete users.
+      allow write: if isAdmin()
+        || (
+          isSignedIn()
+          && request.auth.uid == userId
+        );
     }
 
-    // ICT support tickets, keyed by ticket ID (e.g. "ICT-0007-4f2a").
-    // - Anyone can file a new complaint (no login required).
-    // - A single ticket can be read directly by anyone who knows its ID —
-    //   this is what powers the public "track my ticket" page. The
-    //   reporter's email is checked client-side after the fetch, not here;
-    //   see the note below.
-    // - Listing/browsing all tickets, and updating or deleting one, is
-    //   admin-only.
-    match /issues/{ticketId} {
-      allow get: if true;
-      allow list: if isAdmin();
+
+    // =========================================================
+    // TECHNICIANS
+    // =========================================================
+
+    match /technicians/{technicianId} {
+
+      // Only admins can view technicians.
+      allow read: if isAdmin();
+
+      // Only admins can create technicians.
+      allow create: if isAdmin();
+
+      // Only admins can update technicians.
+      allow update: if isAdmin();
+
+      // Only admins can delete technicians.
+      allow delete: if isAdmin();
+    }
+
+
+    // =========================================================
+    // ICT ISSUES
+    // =========================================================
+
+    match /issues/{issueId} {
+
+      // -------------------------------------------------------
+      // PUBLIC ISSUE SUBMISSION
+      // -------------------------------------------------------
+      //
+      // Anyone can create a new ICT issue.
+      //
       allow create: if true;
-      allow update, delete: if isAdmin();
+
+
+      // -------------------------------------------------------
+      // PUBLIC TICKET LOOKUP
+      // -------------------------------------------------------
+      //
+      // The Track Status page currently searches by ticketId.
+      //
+      // IMPORTANT:
+      // This allows reading individual issue documents.
+      // See security note below.
+      //
+      allow get: if true;
+
+
+      // -------------------------------------------------------
+      // ADMIN LIST
+      // -------------------------------------------------------
+      //
+      // Admin dashboard can retrieve all issues.
+      //
+      allow list: if isAdmin();
+
+
+      // -------------------------------------------------------
+      // ADMIN UPDATE
+      // -------------------------------------------------------
+      //
+      // Assignment, status changes, reports, admin notes, etc.
+      //
+      allow update: if isAdmin();
+
+
+      // -------------------------------------------------------
+      // ADMIN DELETE
+      // -------------------------------------------------------
+      //
+      allow delete: if isAdmin();
     }
 
-    // Shared counter used only inside IssueService's ticket-numbering
-    // transaction. Tighten this (e.g. isAdmin()-only writes via a Cloud
-    // Function) if you ever add another writer to this doc.
+
+    // =========================================================
+    // TICKET COUNTER
+    // =========================================================
+
     match /counters/{counterId} {
+
+      // Keep this only if your application actually uses
+      // this collection from the client.
+      //
+      // For better security, this should eventually be moved
+      // behind a Cloud Function.
+      //
       allow get, write: if true;
     }
 
-    // Deny everything else by default — nothing is accidentally left open.
+
+    // =========================================================
+    // DEFAULT DENY
+    // =========================================================
+
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
 
-// NOTE on /issues/{ticketId} `allow get: if true`:
-// Knowing (or guessing) a ticket ID is enough to read that ticket's full
-// details — the email match on the track-status page happens in the
-// Angular app, not in this rule. The random suffix on generated ticket
-// IDs makes blind guessing impractical, but it is not a server-enforced
-// guarantee. If these tickets could ever contain sensitive information,
-// replace this with a Cloud Function that verifies the email server-side
-// before returning the document.

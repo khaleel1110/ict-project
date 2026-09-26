@@ -1,0 +1,129 @@
+
+<div
+  ngbDropdown
+  class="admin-profile-dropdown"
+  placement="bottom-end"
+>
+
+  <!-- Profile Trigger -->
+  <button
+    type="button"
+    ngbDropdownToggle
+    id="accountNavbarDropdown"
+    class="admin-profile-trigger"
+    aria-label="Open administrator profile menu"
+  >
+
+    <!-- Avatar -->
+    <span class="admin-avatar">
+
+      <img
+        *ngIf="userX?.photoURL"
+        [src]="userX?.photoURL"
+        [alt]="userX?.displayName || 'Administrator'"
+      />
+
+      <span *ngIf="!userX?.photoURL">
+        {{ userX?.email?.charAt(0)?.toUpperCase() || 'A' }}
+      </span>
+
+    </span>
+
+
+    <!-- User information -->
+    <span class="admin-profile-info d-none d-md-flex">
+
+      <span class="admin-profile-name">
+        {{ userX?.displayName || 'Administrator' }}
+      </span>
+
+      <span class="admin-profile-email">
+        {{ userX?.email || 'Admin account' }}
+      </span>
+
+    </span>
+
+
+    <!-- Our own chevron -->
+    <i
+      class="bi bi-chevron-down admin-profile-chevron"
+      aria-hidden="true"
+    ></i>
+
+  </button>
+
+
+  <!-- Dropdown -->
+  <div
+    ngbDropdownMenu
+    class="admin-profile-menu"
+    aria-labelledby="accountNavbarDropdown"
+  >
+
+    <!-- User summary -->
+    <div class="admin-profile-summary">
+
+      <div class="admin-summary-avatar">
+
+        <img
+          *ngIf="userX?.photoURL"
+          [src]="userX?.photoURL"
+          [alt]="userX?.displayName || 'Administrator'"
+        />
+
+        <span *ngIf="!userX?.photoURL">
+          {{ userX?.email?.charAt(0)?.toUpperCase() || 'A' }}
+        </span>
+
+      </div>
+
+      <div class="admin-summary-info">
+
+        <div class="admin-summary-name">
+          {{ userX?.displayName || 'Administrator' }}
+        </div>
+
+        <div class="admin-summary-email">
+          {{ userX?.email || 'Admin account' }}
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="dropdown-divider"></div>
+
+
+    <!-- Public website -->
+    <a
+      routerLink="/home"
+      ngbDropdownItem
+      class="admin-menu-item"
+    >
+      <i class="bi bi-globe2"></i>
+
+      <span>
+        View public site
+      </span>
+    </a>
+
+
+    <!-- Logout -->
+    <button
+      type="button"
+      ngbDropdownItem
+      class="admin-menu-item admin-logout-item"
+      (click)="logOut()"
+    >
+      <i class="bi bi-box-arrow-right"></i>
+
+      <span>
+        Sign out
+      </span>
+    </button>
+
+  </div>
+
+</div>
+

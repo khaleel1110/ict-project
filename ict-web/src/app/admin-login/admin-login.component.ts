@@ -1,28 +1,65 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-admin-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+  ],
   templateUrl: './admin-login.component.html',
+  styleUrls: ['./admin-login.component.scss'],
 })
 export class AdminLoginComponent {
+
   loginForm: FormGroup;
+
   errorMessage = '';
   isLoading = false;
+  showPassword = false;
 
-  constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {
+  readonly currentYear = new Date().getFullYear();
+
+  constructor(
+    private fb: FormBuilder,
+    private auth: AuthService,
+    private router: Router
+  ) {
     this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required],
+      email: [
+        '',
+        [
+          Validators.required,
+          Validators.email,
+        ],
+      ],
+      password: [
+        '',
+        Validators.required,
+      ],
     });
   }
 
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
+
   async submit(): Promise<void> {
+
+    if (this.isLoading) {
+      return;
+    }
+
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
@@ -31,33 +68,52 @@ export class AdminLoginComponent {
     this.isLoading = true;
     this.errorMessage = '';
 
-    const { email, password } = this.loginForm.value;
+    const email = this.loginForm.get('email')?.value?.trim();
+    const password = this.loginForm.get('password')?.value;
 
     try {
+
       await this.auth.login(email, password);
-      this.router.navigate(['/admin/issues']);
+
+      await this.router.navigate([
+        '/admin/dashboard',
+      ]);
+
     } catch (error: any) {
+
       this.errorMessage = this.mapError(error);
+
     } finally {
+
       this.isLoading = false;
+
     }
   }
 
   private mapError(error: any): string {
+
     switch (error?.code) {
+
       case 'auth/invalid-email':
-        return 'Invalid email address.';
+        return 'The email address entered is not valid.';
+
       case 'auth/user-disabled':
-        return 'This account has been disabled.';
+        return 'This administrator account has been disabled.';
+
       case 'auth/user-not-found':
       case 'auth/wrong-password':
       case 'auth/invalid-credential':
-        return 'Incorrect email or password.';
+        return 'The email address or password is incorrect.';
+
       case 'auth/too-many-requests':
-        return 'Too many attempts. Please try again in a moment.';
+        return 'Too many unsuccessful attempts. Please wait a moment and try again.';
+
+      case 'auth/network-request-failed':
+        return 'Unable to connect to the authentication service. Check your internet connection and try again.';
+
       default:
-        // Covers the "no admin access" Error thrown by AuthService.login()
-        return error?.message || 'Unable to sign in. Please try again.';
+        return error?.message ||
+          'Unable to sign in at this time. Please try again.';
     }
   }
 }

@@ -1,0 +1,39 @@
+<aside class="admin-sidebar" [class.collapsed]="collapsed">
+  <div class="sidebar-brand">
+    <img src="/kustwudil_logo.png" alt="Logo" class="sidebar-logo">
+ <!--   <span class="sidebar-title" *ngIf="!collapsed">ICT Admin</span>-->
+  </div>
+
+  <nav class="sidebar-nav">
+    <a routerLink="/admin/dashboard" routerLinkActive="active" class="sidebar-link">
+      <i class="bi-speedometer2"></i>
+      <span *ngIf="!collapsed">Dashboard</span>
+    </a>
+
+<!--    <a routerLink="/admin/issues" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="sidebar-link">
+      <i class="bi-card-checklist"></i>
+      <span *ngIf="!collapsed">Issues</span>
+    </a>-->
+
+    <a routerLink="/admin/issues/new" routerLinkActive="active" class="sidebar-link">
+      <i class="bi-plus-circle"></i>
+      <span *ngIf="!collapsed"> issue</span>
+    </a>
+
+    <a routerLink="/admin/technicians" routerLinkActive="active" class="sidebar-link">
+      <i class="bi-people"></i>
+      <span *ngIf="!collapsed">Assignees</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a routerLink="/home" class="sidebar-link" title="Back to public site">
+      <i class="bi-box-arrow-left"></i>
+      <span *ngIf="!collapsed">Back to site</span>
+    </a>
+
+    <button type="button" class="sidebar-toggle" (click)="toggle()" [attr.aria-label]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+      <i class="bi" [class.bi-chevron-right]="collapsed" [class.bi-chevron-left]="!collapsed"></i>
+    </button>
+  </div>
+</aside>

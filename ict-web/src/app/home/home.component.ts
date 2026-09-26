@@ -10,6 +10,7 @@ import {
   NgbAccordionItem
 } from '@ng-bootstrap/ng-bootstrap';
 import {HeaderComponent} from '../core/header/header.component';
+import {FooterComponent} from '../core/footer/footer.component';
 
 @Component({
   selector: 'app-home',
@@ -23,7 +24,8 @@ import {HeaderComponent} from '../core/header/header.component';
     NgbAccordionButton,
     NgbAccordionCollapse,
     NgbAccordionBody,
-    HeaderComponent
+    HeaderComponent,
+    FooterComponent
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'

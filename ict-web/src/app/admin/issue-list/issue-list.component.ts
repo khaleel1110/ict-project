@@ -7,21 +7,21 @@ import { CommonModule } from '@angular/common';
 
 import { FormsModule } from '@angular/forms';
 
-import {
-  Router,
-  RouterLink,
-} from '@angular/router';
+import { Router } from '@angular/router';
 
 import { Subscription } from 'rxjs';
 
 import { IssueService } from '../../services/issue.service';
 
+
 import {
   Issue,
   IssueStatus,
 } from '../../models/issue.model';
+import {TechnicianService} from '../../services/technician.service';
+import {Technician} from '../../models/technician.model';
 
-import { AuthService } from '../../services/auth.service';
+
 
 @Component({
   selector: 'app-issue-list',
@@ -31,7 +31,6 @@ import { AuthService } from '../../services/auth.service';
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
   ],
 
   templateUrl:
@@ -42,6 +41,8 @@ export class IssueListComponent
 
   issues: Issue[] = [];
 
+  technicians: Technician[] = [];
+
   statusFilter = 'All';
 
   categoryFilter = 'All';
@@ -49,6 +50,8 @@ export class IssueListComponent
   searchTerm = '';
 
   selectedIssue: Issue | null = null;
+
+  selectedTechnicianId = '';
 
   isLoading = true;
 
@@ -59,7 +62,7 @@ export class IssueListComponent
 
   constructor(
     private readonly issueService: IssueService,
-    private readonly auth: AuthService,
+    private readonly technicianService: TechnicianService,
     private readonly router: Router
   ) {
 
@@ -97,27 +100,24 @@ export class IssueListComponent
     // LOADING
     // -------------------------------------------------------
 
-    this.subscriptions.add(
 
-      this.issueService.isLoading$
-        .subscribe(
-          (loading) => {
-            this.isLoading = loading;
-          }
-        )
-    );
 
     // -------------------------------------------------------
     // ERROR
     // -------------------------------------------------------
 
+
+
+    // -------------------------------------------------------
+    // TECHNICIANS
+    // -------------------------------------------------------
+
     this.subscriptions.add(
 
-      this.issueService.error$
+      this.technicianService.technicians$
         .subscribe(
-          (error) => {
-            this.errorMessage =
-              error ?? '';
+          (list) => {
+            this.technicians = list;
           }
         )
     );
@@ -208,11 +208,103 @@ export class IssueListComponent
   ): void {
 
     this.selectedIssue = issue;
+
+    const matchedTechnician =
+      this.technicians.find(
+        (tech) =>
+          tech.email === issue.assignedTechnicianEmail
+      );
+
+    this.selectedTechnicianId =
+      matchedTechnician?.id ?? '';
   }
 
   closeView(): void {
 
     this.selectedIssue = null;
+
+    this.selectedTechnicianId = '';
+  }
+
+  // =========================================================
+  // ASSIGN TECHNICIAN
+  // =========================================================
+
+  async assignTechnician(
+    issue: Issue
+  ): Promise<void> {
+
+    const technician =
+      this.technicians.find(
+        (tech) =>
+          tech.id === this.selectedTechnicianId
+      );
+
+    if (!technician) {
+      return;
+    }
+
+    try {
+
+      await this.issueService.update(
+        issue.id,
+        {
+          assignedTechnician: technician.name,
+          assignedTechnicianEmail: technician.email,
+        }
+      );
+
+      if (this.selectedIssue?.id === issue.id) {
+
+        this.selectedIssue = {
+          ...this.selectedIssue,
+          assignedTechnician: technician.name,
+          assignedTechnicianEmail: technician.email,
+        };
+      }
+
+    } catch (error) {
+
+      console.error(
+        'Failed to assign technician:',
+        error
+      );
+
+      this.errorMessage =
+        'Unable to assign this issue to a technician.';
+    }
+  }
+
+  // =========================================================
+  // MESSAGE LINK (mailto)
+  // =========================================================
+
+  messageLink(
+    issue: Issue
+  ): string {
+
+    if (!issue.assignedTechnicianEmail) {
+      return '';
+    }
+
+    const subject =
+      encodeURIComponent(
+        `ICT issue ${issue.ticketId}: ${issue.category}`
+      );
+
+    const body =
+      encodeURIComponent(
+        `Hi ${issue.assignedTechnician ?? ''},\n\n` +
+        `Please look into the following issue:\n\n` +
+        `Ticket: ${issue.ticketId}\n` +
+        `Reporter: ${issue.fullName} (${issue.email})\n` +
+        `Priority: ${issue.priority}\n` +
+        `Status: ${issue.status}\n` +
+        `Description: ${issue.description}\n\n` +
+        `Thanks.`
+      );
+
+    return `mailto:${issue.assignedTechnicianEmail}?subject=${subject}&body=${body}`;
   }
 
   // =========================================================
@@ -279,19 +371,6 @@ export class IssueListComponent
       this.errorMessage =
         'Unable to delete this issue.';
     }
-  }
-
-  // =========================================================
-  // LOGOUT
-  // =========================================================
-
-  async logout(): Promise<void> {
-
-    await this.auth.logout();
-
-    this.router.navigate([
-      '/admin/login',
-    ]);
   }
 
   // =========================================================

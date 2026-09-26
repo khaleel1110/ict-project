@@ -1,36 +1,82 @@
-<!-- admin-login.component.html -->
+<main class="admin-login-page">
+  <div class="login-background"></div>
 
-<main id="content" role="main" class="bg-light">
-  <div class="container my-5 py-5 content-space-2">
-    <div class="row justify-content-center">
-      <div class="row d-flex justify-content-center">
-      <a routerLink="/home"  class="  text-prmary  text-end">home</a>
-      </div>
-    </div>
- <div class="row justify-content-center">
-      <div class="col-md-6 col-lg-5">
+  <div class="container">
+    <div class="row justify-content-center align-items-center min-vh-100 py-4">
 
-        <div class="card">
+      <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
 
-          <div class="card-header border-bottom py-4 text-center">
-            <h4 class="card-header-title">
-              ICT Admin Login
-            </h4>
+        <!-- Home -->
+        <div class="text-end mb-3">
+          <a
+            routerLink="/home"
+            class="back-home"
+            aria-label="Return to home page"
+          >
+            <i class="bi bi-arrow-left me-1"></i>
+            Home
+          </a>
+        </div>
 
-            <p class="text-muted mb-0 mt-2">
+        <!-- Login Card -->
+        <div class="login-card">
+
+          <!-- Header -->
+          <div class="login-header text-center">
+
+            <div class="login-icon">
+              <i class="bi bi-shield-lock"></i>
+            </div>
+
+            <h1 class="login-title">
+              ICT Admin Portal
+            </h1>
+
+            <p class="login-subtitle">
               Sign in to access the ICT support dashboard
             </p>
+
           </div>
 
-          <div class="card-body">
+          <!-- Body -->
+          <div class="login-body">
+
+            <!-- Error -->
+            <div
+              *ngIf="errorMessage"
+              class="login-error"
+              role="alert"
+              aria-live="polite"
+            >
+              <div class="error-icon">
+                <i class="bi bi-exclamation-circle"></i>
+              </div>
+
+              <div>
+                <strong>Sign-in failed</strong>
+                <p class="mb-0 mt-1">
+                  {{ errorMessage }}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="error-close"
+                aria-label="Close error"
+                (click)="errorMessage = ''"
+              >
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
 
             <form
               [formGroup]="loginForm"
               (ngSubmit)="submit()"
+              novalidate
             >
 
               <!-- Email -->
-              <div class="mb-4">
+              <div class="form-field mb-4">
 
                 <label
                   for="email"
@@ -39,27 +85,34 @@
                   Email address
                 </label>
 
-                <input
-                  type="email"
-                  class="form-control"
-                  id="email"
-                  formControlName="email"
-                  placeholder="admin@example.com"
-                  autocomplete="email"
-                  [ngClass]="{
-                    'is-invalid':
-                      loginForm.get('email')?.invalid &&
-                      loginForm.get('email')?.touched
-                  }"
-                />
+                <div class="input-wrapper">
+
+                  <i class="bi bi-envelope input-icon"></i>
+
+                  <input
+                    type="email"
+                    id="email"
+                    class="form-control login-input"
+                    formControlName="email"
+                    placeholder="admin@example.com"
+                    autocomplete="email"
+                    [ngClass]="{
+                      'is-invalid':
+                        loginForm.get('email')?.invalid &&
+                        loginForm.get('email')?.touched
+                    }"
+                  />
+
+                </div>
 
                 <div
                   *ngIf="
                     loginForm.get('email')?.hasError('required') &&
                     loginForm.get('email')?.touched
                   "
-                  class="invalid-feedback"
+                  class="field-error"
                 >
+                  <i class="bi bi-exclamation-circle me-1"></i>
                   Email address is required.
                 </div>
 
@@ -68,8 +121,9 @@
                     loginForm.get('email')?.hasError('email') &&
                     loginForm.get('email')?.touched
                   "
-                  class="invalid-feedback"
+                  class="field-error"
                 >
+                  <i class="bi bi-exclamation-circle me-1"></i>
                   Please enter a valid email address.
                 </div>
 
@@ -77,76 +131,117 @@
 
 
               <!-- Password -->
-              <div class="mb-4">
+              <div class="form-field mb-4">
 
-                <label
-                  for="password"
-                  class="form-label"
-                >
-                  Password
-                </label>
+                <div class="d-flex justify-content-between align-items-center">
+                  <label
+                    for="password"
+                    class="form-label"
+                  >
+                    Password
+                  </label>
+                </div>
 
-                <input
-                  type="password"
-                  class="form-control"
-                  id="password"
-                  formControlName="password"
-                  placeholder="••••••••"
-                  autocomplete="current-password"
-                  [ngClass]="{
-                    'is-invalid':
-                      loginForm.get('password')?.invalid &&
-                      loginForm.get('password')?.touched
-                  }"
-                />
+                <div class="input-wrapper">
+
+                  <i class="bi bi-lock input-icon"></i>
+
+                  <input
+                    [type]="showPassword ? 'text' : 'password'"
+                    id="password"
+                    class="form-control login-input password-input"
+                    formControlName="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    [ngClass]="{
+                      'is-invalid':
+                        loginForm.get('password')?.invalid &&
+                        loginForm.get('password')?.touched
+                    }"
+                  />
+
+                  <button
+                    type="button"
+                    class="password-toggle"
+                    [attr.aria-label]="
+                      showPassword ? 'Hide password' : 'Show password'
+                    "
+                    (click)="togglePassword()"
+                  >
+                    <i
+                      class="bi"
+                      [ngClass]="
+                        showPassword
+                          ? 'bi-eye-slash'
+                          : 'bi-eye'
+                      "
+                    ></i>
+                  </button>
+
+                </div>
 
                 <div
                   *ngIf="
                     loginForm.get('password')?.invalid &&
                     loginForm.get('password')?.touched
                   "
-                  class="invalid-feedback"
+                  class="field-error"
                 >
+                  <i class="bi bi-exclamation-circle me-1"></i>
                   Password is required.
                 </div>
 
               </div>
 
 
-              <!-- Error -->
-              <div
-                class="alert alert-soft-danger py-2"
-                role="alert"
-                *ngIf="errorMessage"
-              >
-                {{ errorMessage }}
-              </div>
-
-
               <!-- Submit -->
               <button
                 type="submit"
-                class="btn btn-primary w-100"
+                class="btn login-button w-100"
                 [disabled]="isLoading"
               >
 
-                <span
-                  *ngIf="isLoading"
-                  class="spinner-border spinner-border-sm me-2"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
+                <ng-container *ngIf="!isLoading">
+                  <i class="bi bi-box-arrow-in-right me-2"></i>
+                  Sign in to dashboard
+                </ng-container>
 
-                {{ isLoading ? 'Signing in...' : 'Sign in' }}
+                <ng-container *ngIf="isLoading">
+                  <span
+                    class="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+
+                  Authenticating...
+                </ng-container>
 
               </button>
 
             </form>
 
           </div>
+
+          <!-- Footer -->
+          <div class="login-footer text-center">
+            <div class="security-note">
+              <i class="bi bi-shield-check me-1"></i>
+              Secure administrator access
+            </div>
+
+            <p class="mb-0 mt-2">
+              Authorized personnel only
+            </p>
+          </div>
+
         </div>
+
+        <p class="copyright text-center mt-4">
+          © {{ currentYear }} ICT Support. All rights reserved.
+        </p>
 
       </div>
     </div>
   </div>
 </main>
+

@@ -11,7 +11,7 @@ import {LayOutComponent} from './core/lay-out/lay-out.component';
 
 })
 export class AppComponent {
-  title = '5-asidse';
+  title = 'ict-web';
 /*  constructor() {
     AOS.init();
 

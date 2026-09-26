@@ -1,42 +1,30 @@
-import {Injectable, inject} from '@angular/core';
+
+import { Injectable, inject } from '@angular/core';
 
 import {
   Firestore,
+  Timestamp,
   collection,
   collectionData,
   doc,
   getDoc,
-  setDoc,
+  addDoc,
   updateDoc,
   deleteDoc,
-  runTransaction,
-  orderBy,
+  serverTimestamp,
+  arrayUnion,
   query,
+  where,
+  getDocs,
 } from '@angular/fire/firestore';
 
-import {BehaviorSubject, Observable, Subscription} from 'rxjs';
-import {map} from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
-import {Issue} from '../models/issue.model';
-
-/**
- * Firestore collection used by the ICT support system.
- *
- * All reported complaints/issues are stored here:
- *
- * report-issue/
- *   ICT-0001-ab12
- *   ICT-0002-cd34
- *   ...
- */
-const COLLECTION = 'report-issue';
-
-/**
- * Counter used to generate ticket numbers.
- *
- * counters/report-issue
- */
-const COUNTER_DOC = 'counters/report-issue';
+import {
+  Issue,
+  IssueActivity,
+  CreateIssuePayload,
+} from '../models/issue.model';
 
 @Injectable({
   providedIn: 'root',
@@ -44,323 +32,26 @@ const COUNTER_DOC = 'counters/report-issue';
 export class IssueService {
   private readonly firestore = inject(Firestore);
 
+  // =========================================================
+  // COLLECTION
+  // =========================================================
+
   private readonly issuesCollection = collection(
     this.firestore,
-    COLLECTION
+    'issues'
   );
 
-  private subscription?: Subscription;
-
-  // ---------------------------------------------------------
-  // LOADING STATE
-  // ---------------------------------------------------------
-
-  private readonly loadingSubject =
-    new BehaviorSubject<boolean>(true);
-
-  readonly isLoading$ =
-    this.loadingSubject.asObservable();
-
-  // ---------------------------------------------------------
-  // ERROR STATE
-  // ---------------------------------------------------------
-
-  private readonly errorSubject =
-    new BehaviorSubject<string | null>(null);
-
-  readonly error$ =
-    this.errorSubject.asObservable();
-
-  // ---------------------------------------------------------
-  // ISSUES DATA
-  // ---------------------------------------------------------
-
-  private readonly issuesSubject =
-    new BehaviorSubject<Issue[]>([]);
-
-  readonly issues$ =
-    this.issuesSubject.asObservable();
-
-  // ---------------------------------------------------------
-  // CONSTRUCTOR
-  // ---------------------------------------------------------
-
-  constructor() {
-    this.loadIssues();
-  }
-
   // =========================================================
-  // LOAD ALL ISSUES
+  // ISSUES OBSERVABLE
   // =========================================================
 
-  private loadIssues(): void {
-    this.loadingSubject.next(true);
-    this.errorSubject.next(null);
-
-    const issuesQuery = query(
+  readonly issues$: Observable<Issue[]> =
+    collectionData(
       this.issuesCollection,
-      orderBy('dateReported', 'desc')
-    );
-
-    this.subscription = collectionData(issuesQuery, {
-      idField: 'id',
-    })
-      .pipe(
-        map((items) => items as Issue[])
-      )
-      .subscribe({
-        next: (issues) => {
-          this.issuesSubject.next(issues);
-          this.loadingSubject.next(false);
-
-          console.log(
-            `Loaded ${issues.length} issues from Firestore collection "${COLLECTION}".`
-          );
-        },
-
-        error: (error) => {
-          console.error(
-            `Error loading Firestore collection "${COLLECTION}":`,
-            error
-          );
-
-          this.loadingSubject.next(false);
-
-          this.errorSubject.next(
-            'Unable to load reported issues from Firestore.'
-          );
-        },
-      });
-  }
-
-  // =========================================================
-  // GET ONE ISSUE
-  // =========================================================
-
-  async getById(
-    id: string
-  ): Promise<Issue | undefined> {
-    if (!id) {
-      return undefined;
-    }
-
-    try {
-      const issueRef = doc(
-        this.firestore,
-        COLLECTION,
-        id
-      );
-
-      const snap = await getDoc(issueRef);
-
-      if (!snap.exists()) {
-        return undefined;
+      {
+        idField: 'id',
       }
-
-      return {
-        id: snap.id,
-        ...snap.data(),
-      } as Issue;
-    } catch (error) {
-      console.error(
-        'Error getting issue:',
-        error
-      );
-
-      throw error;
-    }
-  }
-
-  // =========================================================
-  // GET ISSUE BY TICKET ID
-  // =========================================================
-
-  async getByTicketId(
-    ticketId: string
-  ): Promise<Issue | undefined> {
-    return this.getById(ticketId.trim());
-  }
-
-  // =========================================================
-  // CREATE ISSUE
-  // =========================================================
-
-  async create(
-    data: Omit<
-      Issue,
-      | 'id'
-      | 'ticketId'
-      | 'status'
-      | 'dateReported'
-      | 'dateUpdated'
-    >
-  ): Promise<Issue> {
-
-    this.errorSubject.next(null);
-
-    try {
-      // Generate ticket number
-      const ticketId =
-        await this.generateTicketId();
-
-      const now =
-        new Date().toISOString();
-
-      const issueData: Omit<Issue, 'id'> = {
-        ...data,
-
-        ticketId,
-
-        status: 'Open',
-
-        dateReported: now,
-
-        dateUpdated: now,
-      };
-
-      // -----------------------------------------------------
-      // IMPORTANT:
-      // Ticket ID is also the Firestore document ID.
-      //
-      // report-issue/ICT-0001-ab12
-      // -----------------------------------------------------
-
-      const issueRef = doc(
-        this.firestore,
-        COLLECTION,
-        ticketId
-      );
-
-      await setDoc(
-        issueRef,
-        issueData
-      );
-
-      const createdIssue: Issue = {
-        id: ticketId,
-        ...issueData,
-      };
-
-      // Update local observable immediately
-      // so the admin UI doesn't need to wait for
-      // another page refresh.
-      this.issuesSubject.next([
-        createdIssue,
-        ...this.issuesSubject.value,
-      ]);
-
-      console.log(
-        'Issue successfully created:',
-        createdIssue
-      );
-
-      return createdIssue;
-
-    } catch (error) {
-
-      console.error(
-        'Failed to create issue:',
-        error
-      );
-
-      this.errorSubject.next(
-        'Failed to submit the issue to Firestore.'
-      );
-
-      throw error;
-    }
-  }
-
-  // =========================================================
-  // UPDATE ISSUE
-  // =========================================================
-
-  async update(
-    id: string,
-    changes: Partial<Issue>
-  ): Promise<void> {
-
-    if (!id) {
-      throw new Error(
-        'Issue ID is required.'
-      );
-    }
-
-    try {
-
-      const issueRef = doc(
-        this.firestore,
-        COLLECTION,
-        id
-      );
-
-      await updateDoc(
-        issueRef,
-        {
-          ...changes,
-          dateUpdated:
-            new Date().toISOString(),
-        }
-      );
-
-      console.log(
-        `Issue ${id} updated successfully.`
-      );
-
-    } catch (error) {
-
-      console.error(
-        `Failed to update issue ${id}:`,
-        error
-      );
-
-      throw error;
-    }
-  }
-
-  // =========================================================
-  // DELETE ISSUE
-  // =========================================================
-
-  async delete(
-    id: string
-  ): Promise<void> {
-
-    if (!id) {
-      return;
-    }
-
-    try {
-
-      const issueRef = doc(
-        this.firestore,
-        COLLECTION,
-        id
-      );
-
-      await deleteDoc(issueRef);
-
-      // Remove immediately from local state
-      this.issuesSubject.next(
-        this.issuesSubject.value.filter(
-          (issue) => issue.id !== id
-        )
-      );
-
-      console.log(
-        `Issue ${id} deleted successfully.`
-      );
-
-    } catch (error) {
-
-      console.error(
-        `Failed to delete issue ${id}:`,
-        error
-      );
-
-      throw error;
-    }
-  }
+    ) as Observable<Issue[]>;
 
   // =========================================================
   // GET ALL
@@ -371,81 +62,226 @@ export class IssueService {
   }
 
   // =========================================================
-  // GET COUNT
+  // GET SINGLE ISSUE BY DOCUMENT ID
   // =========================================================
 
-  getCount(): Observable<number> {
-    return this.issues$.pipe(
-      map(
-        (issues) => issues.length
+  async getById(
+    id: string
+  ): Promise<Issue | null> {
+    const issueRef = doc(
+      this.firestore,
+      'issues',
+      id
+    );
+
+    const snapshot = await getDoc(issueRef);
+
+    if (!snapshot.exists()) {
+      return null;
+    }
+
+    return {
+      id: snapshot.id,
+      ...snapshot.data(),
+    } as Issue;
+  }
+
+  // =========================================================
+  // GET ISSUE BY TICKET ID
+  // =========================================================
+
+  async getByTicketId(
+    ticketId: string
+  ): Promise<Issue | null> {
+    const normalizedTicketId =
+      ticketId.trim().toUpperCase();
+
+    if (!normalizedTicketId) {
+      return null;
+    }
+
+    const issuesQuery = query(
+      this.issuesCollection,
+      where(
+        'ticketId',
+        '==',
+        normalizedTicketId
       )
     );
+
+    const snapshot =
+      await getDocs(issuesQuery);
+
+    if (snapshot.empty) {
+      return null;
+    }
+
+    const issueDoc =
+      snapshot.docs[0];
+
+    return {
+      id: issueDoc.id,
+      ...issueDoc.data(),
+    } as Issue;
   }
 
   // =========================================================
-  // GENERATE TICKET ID
+  // CREATE
   // =========================================================
 
-  private async generateTicketId(): Promise<string> {
+  async create(
+    payload: CreateIssuePayload
+  ): Promise<Issue> {
+    const ticketId =
+      this.generateTicketId();
 
-    const counterRef = doc(
-      this.firestore,
-      COUNTER_DOC
-    );
+    const issue = {
+      ...payload,
 
-    const nextNumber =
-      await runTransaction(
-        this.firestore,
-        async (transaction) => {
+      ticketId,
 
-          const snapshot =
-            await transaction.get(
-              counterRef
-            );
+      status: 'Open' as const,
 
-          const current =
-            snapshot.exists()
-              ? Number(
-                snapshot.data()['count'] ?? 0
-              )
-              : 0;
+      reports: [],
 
-          const next =
-            current + 1;
+      dateReported:
+        serverTimestamp(),
 
-          transaction.set(
-            counterRef,
-            {
-              count: next,
-              updatedAt:
-                new Date().toISOString(),
-            },
-            {
-              merge: true,
-            }
-          );
+      createdAt:
+        serverTimestamp(),
 
-          return next;
-        }
+      updatedAt:
+        serverTimestamp(),
+    };
+
+    const document =
+      await addDoc(
+        this.issuesCollection,
+        issue
       );
 
-    const suffix =
-      Math.random()
-        .toString(36)
-        .substring(2, 6)
-        .toUpperCase();
-
-    return `ICT-${String(nextNumber).padStart(
-      4,
-      '0'
-    )}-${suffix}`;
+    return {
+      id: document.id,
+      ...payload,
+      ticketId,
+      status: 'Open',
+      reports: [],
+    };
   }
 
   // =========================================================
-  // CLEANUP
+  // UPDATE
   // =========================================================
 
-  ngOnDestroy(): void {
-    this.subscription?.unsubscribe();
+  async update(
+    id: string,
+    data: Partial<Issue>
+  ): Promise<void> {
+    const issueRef =
+      doc(
+        this.firestore,
+        'issues',
+        id
+      );
+
+    await updateDoc(
+      issueRef,
+      {
+        ...data,
+
+        updatedAt:
+          serverTimestamp(),
+      }
+    );
+  }
+
+  // =========================================================
+  // DELETE
+  // =========================================================
+
+  async delete(
+    id: string
+  ): Promise<void> {
+    const issueRef =
+      doc(
+        this.firestore,
+        'issues',
+        id
+      );
+
+    await deleteDoc(
+      issueRef
+    );
+  }
+
+  // =========================================================
+  // ADD ACTIVITY / REPORT
+  // =========================================================
+
+
+async addReport(
+  issueId: string,
+  report: IssueActivity
+): Promise<void> {
+
+  const issueRef = doc(
+    this.firestore,
+    'issues',
+    issueId
+  );
+
+  // ---------------------------------------------------------
+  // REMOVE UNDEFINED OPTIONAL VALUES
+  // ---------------------------------------------------------
+
+  const cleanReport: Record<string, unknown> = {
+    id: report.id,
+    type: report.type,
+    message: report.message,
+    createdAt: report.createdAt,
+  };
+
+  if (report.createdBy !== undefined) {
+    cleanReport['createdBy'] =
+      report.createdBy;
+  }
+
+  if (report.technicianId !== undefined) {
+    cleanReport['technicianId'] =
+      report.technicianId;
+  }
+
+  if (report.technicianName !== undefined) {
+    cleanReport['technicianName'] =
+      report.technicianName;
+  }
+
+  // ---------------------------------------------------------
+  // SAVE
+  // ---------------------------------------------------------
+
+  await updateDoc(issueRef, {
+    reports: arrayUnion(cleanReport),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+
+  // =========================================================
+  // GENERATE TICKET
+  // =========================================================
+
+  private generateTicketId(): string {
+    const year =
+      new Date().getFullYear();
+
+    const random =
+      Math.floor(
+        10000 +
+        Math.random() * 90000
+      );
+
+    return `ICT-${year}-${random}`;
   }
 }
+
